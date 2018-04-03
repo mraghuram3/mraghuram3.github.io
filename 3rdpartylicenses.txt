@@ -71,10 +71,14 @@ THE SOFTWARE.
 MIT
 MIT
 
-@angular/common@5.0.5
+ngx-scroll-indicator@0.1.0
 MIT
 MIT
 
 ngx-text-highlight@0.1.5
+MIT
+MIT
+
+@angular/common@5.0.5
 MIT
 MIT
