@@ -71,11 +71,23 @@ THE SOFTWARE.
 MIT
 MIT
 
+@angular/platform-browser@5.0.5
+MIT
+MIT
+
+angulartics2@5.3.0
+MIT
+MIT
+
 ngx-scroll-indicator@0.1.0
 MIT
 MIT
 
 ngx-text-highlight@0.1.5
+MIT
+MIT
+
+@angular/router@5.0.5
 MIT
 MIT
 
