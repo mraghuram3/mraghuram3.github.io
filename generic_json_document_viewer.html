@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Document Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .upload-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .upload-box {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .upload-title {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .upload-description {
+            color: #666;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .document-container {
+            display: none;
+            max-width: 1200px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .document-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .document-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
+        }
+
+        .document-title {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .document-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .new-document-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .new-document-btn:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .document-content {
+            padding: 2rem;
+        }
+
+        .navigation {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #667eea;
+        }
+
+        .nav-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #667eea;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .nav-link {
+            color: #666;
+            text-decoration: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .nav-link:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .block {
+            margin-bottom: 1.5rem;
+            scroll-margin-top: 100px;
+        }
+
+        .block-paragraph {
+            margin-bottom: 1rem;
+            text-align: justify;
+            padding: 0.75rem;
+            background: rgba(102, 126, 234, 0.02);
+            border-radius: 6px;
+            border-left: 3px solid rgba(102, 126, 234, 0.2);
+            line-height: 1.7;
+        }
+
+        .block-clause {
+            margin-bottom: 2rem;
+        }
+
+        .clause-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e9ecef;
+            position: relative;
+        }
+
+        .clause-title::before {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background: #667eea;
+        }
+
+        .clause-children {
+            margin-left: 1.5rem;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 1rem 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: top;
+            white-space: pre-line;
+        }
+
+        tr:nth-child(even) {
+            background: rgba(102, 126, 234, 0.03);
+        }
+
+        tr:hover {
+            background: rgba(102, 126, 234, 0.08);
+            transition: all 0.2s ease;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: none;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid #c33;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .document-container {
+                margin: 1rem;
+                border-radius: 8px;
+            }
+            
+            .document-content {
+                padding: 1rem;
+            }
+            
+            .document-title {
+                font-size: 2rem;
+            }
+            
+            .nav-links {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .clause-children {
+                margin-left: 0.5rem;
+            }
+            
+            table {
+                font-size: 0.8rem;
+            }
+            
+            th, td {
+                padding: 0.5rem;
+            }
+
+            .upload-box {
+                padding: 2rem;
+            }
+
+            .upload-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Upload Container -->
+    <div class="upload-container" id="uploadContainer">
+        <div class="upload-box">
+            <div class="upload-icon">📄</div>
+            <h1 class="upload-title">JSON Document Viewer</h1>
+            <p class="upload-description">Select a JSON file to view its structured content</p>
+            
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" class="file-input" accept=".json" />
+                <label for="fileInput" class="file-input-label">
+                    Choose JSON File
+                </label>
+            </div>
+            
+            <div id="fileName" style="margin-top: 1rem; color: #666; font-size: 0.9rem;"></div>
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+            <div id="loadingMessage" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                Processing document...
+            </div>
+        </div>
+    </div>
+
+    <!-- Document Container -->
+    <div class="document-container" id="documentContainer">
+        <div class="document-header">
+            <button class="new-document-btn" onclick="loadNewDocument()">Load New Document</button>
+            <h1 class="document-title" id="documentTitle">Document</h1>
+            <div class="document-subtitle" id="documentSubtitle">JSON Document Viewer</div>
+        </div>
+
+        <div class="document-content">
+            <div class="navigation" id="navigation" style="display: none;">
+                <div class="nav-title">Quick Navigation</div>
+                <div class="nav-links" id="navLinks"></div>
+            </div>
+
+            <div id="documentBody"></div>
+        </div>
+    </div>
+
+    <button class="back-to-top" id="backToTop" onclick="scrollToTop()">↑</button>
+
+    <script>
+        let currentDocument = null;
+
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.name.toLowerCase().endsWith('.json')) {
+                showError('Please select a valid JSON file.');
+                return;
+            }
+
+            document.getElementById('fileName').textContent = `Selected: ${file.name}`;
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const jsonData = JSON.parse(e.target.result);
+                    processDocument(jsonData, file.name);
+                } catch (error) {
+                    showError('Invalid JSON file. Please check the file format.');
+                }
+                document.getElementById('loadingMessage').style.display = 'none';
+            };
+            reader.readAsText(file);
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function processDocument(jsonData, fileName) {
+            currentDocument = jsonData;
+            
+            // Hide upload container and show document
+            document.getElementById('uploadContainer').style.display = 'none';
+            document.getElementById('documentContainer').style.display = 'block';
+            document.getElementById('backToTop').style.display = 'block';
+
+            // Set document title
+            const titleElement = document.getElementById('documentTitle');
+            const subtitleElement = document.getElementById('documentSubtitle');
+            
+            // Try to extract title from first block or use filename
+            let documentTitle = fileName.replace('.json', '');
+            if (Array.isArray(jsonData) && jsonData.length > 0 && jsonData[0].content) {
+                const firstContent = jsonData[0].content.replace(/<[^>]*>/g, '').trim();
+                if (firstContent.length > 0 && firstContent.length < 100) {
+                    documentTitle = firstContent;
+                }
+            }
+            
+            titleElement.textContent = documentTitle;
+            subtitleElement.textContent = `Loaded from ${fileName}`;
+
+            // Process and render content
+            renderDocument(jsonData);
+            
+            // Generate navigation
+            generateNavigation(jsonData);
+        }
+
+        function renderDocument(blocks) {
+            const documentBody = document.getElementById('documentBody');
+            documentBody.innerHTML = '';
+
+            blocks.forEach(block => {
+                const blockElement = renderBlock(block);
+                if (blockElement) {
+                    documentBody.appendChild(blockElement);
+                }
+            });
+        }
+
+        function renderBlock(block) {
+            const blockDiv = document.createElement('div');
+            blockDiv.className = 'block';
+            blockDiv.id = block.id || '';
+
+            switch (block.type) {
+                case 'paragraph':
+                    blockDiv.innerHTML = `<div class="block-paragraph">${block.content || ''}</div>`;
+                    break;
+
+                case 'clause':
+                    blockDiv.className = 'block block-clause';
+                    blockDiv.innerHTML = `<h2 class="clause-title">${block.content || ''}</h2>`;
+                    
+                    if (block.children && block.children.length > 0) {
+                        const childrenDiv = document.createElement('div');
+                        childrenDiv.className = 'clause-children';
+                        block.children.forEach(child => {
+                            const childElement = renderBlock(child);
+                            if (childElement) {
+                                childrenDiv.appendChild(childElement);
+                            }
+                        });
+                        blockDiv.appendChild(childrenDiv);
+                    }
+                    break;
+
+                case 'table':
+                    if (block.rows && block.columns) {
+                        blockDiv.innerHTML = renderTable(block);
+                    }
+                    break;
+
+                default:
+                    if (block.content) {
+                        blockDiv.innerHTML = `<div class="block-paragraph">${block.content}</div>`;
+                    }
+                    break;
+            }
+
+            return blockDiv.innerHTML.trim() ? blockDiv : null;
+        }
+
+        function renderTable(tableBlock) {
+            const { rows, columns } = tableBlock;
+            
+            let tableHtml = '<div class="table-container"><table>';
+            
+            // Table header
+            tableHtml += '<thead><tr>';
+            columns.forEach(col => {
+                tableHtml += `<th>${col.name || col.id || 'Column'}</th>`;
+            });
+            tableHtml += '</tr></thead>';
+            
+            // Table body
+            tableHtml += '<tbody>';
+            rows.forEach(row => {
+                tableHtml += '<tr>';
+                columns.forEach(col => {
+                    const cellValue = row[col.id] || '';
+                    tableHtml += `<td>${cellValue}</td>`;
+                });
+                tableHtml += '</tr>';
+            });
+            tableHtml += '</tbody>';
+            
+            tableHtml += '</table></div>';
+            return tableHtml;
+        }
+
+        function generateNavigation(blocks) {
+            const navLinks = document.getElementById('navLinks');
+            const navigation = document.getElementById('navigation');
+            
+            const clauseBlocks = blocks.filter(block => block.type === 'clause' && block.content);
+            
+            if (clauseBlocks.length > 0) {
+                navLinks.innerHTML = '';
+                clauseBlocks.forEach(block => {
+                    const link = document.createElement('a');
+                    link.className = 'nav-link';
+                    link.href = `#${block.id}`;
+                    link.textContent = block.content.replace(/<[^>]*>/g, '').trim();
+                    navLinks.appendChild(link);
+                });
+                navigation.style.display = 'block';
+            } else {
+                navigation.style.display = 'none';
+            }
+        }
+
+        function loadNewDocument() {
+            document.getElementById('uploadContainer').style.display = 'flex';
+            document.getElementById('documentContainer').style.display = 'none';
+            document.getElementById('backToTop').style.display = 'none';
+            
+            // Reset form
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileName').textContent = '';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('loadingMessage').style.display = 'none';
+        }
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Show/hide back to top button based on scroll position
+        window.addEventListener('scroll', function() {
+            const backToTopBtn = document.getElementById('backToTop');
+            if (window.pageYOffset > 300) {
+                backToTopBtn.style.display = 'block';
+            } else {
+                backToTopBtn.style.display = 'none';
+            }
+        });
+
+        // Smooth scrolling for navigation links
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('nav-link')) {
+                e.preventDefault();
+                const targetId = e.target.getAttribute('href').substring(1);
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
